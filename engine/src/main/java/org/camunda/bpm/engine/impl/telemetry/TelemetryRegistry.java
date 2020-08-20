@@ -42,13 +42,7 @@ public class TelemetryRegistry {
     return entries;
   }
 
-  public CommandCounter createCounter(String name) {
-    CommandCounter counter = new CommandCounter(name);
-    entries.put(name, counter);
-    return counter;
-  }
-
-  public void markOccurrence(String name) {
+  public synchronized void markOccurrence(String name) {
     CommandCounter counter = entries.get(name);
     if (counter == null) {
       counter = new CommandCounter(name);

@@ -34,7 +34,6 @@ public class CommandCounterInterceptor extends CommandInterceptor {
     try {
       return next.execute(command);
     } finally {
-      System.out.println("HERE: " + ClassNameUtil.getClassNameWithoutPackage(command));
       if (processEngineConfiguration != null) {
         TelemetryRegistry telemetryRegistry = processEngineConfiguration.getTelemetryRegistry();
         if (telemetryRegistry != null) {

@@ -16,6 +16,8 @@
  */
 package org.camunda.bpm.engine.impl.telemetry.dto;
 
+import java.util.Map;
+
 import org.camunda.bpm.engine.impl.util.JsonUtil;
 
 public class Data {
@@ -49,8 +51,14 @@ public class Data {
     this.product.internals.applicationServer = applicationServer;
   }
 
+  public void setCommands(Map<String, Command> commands) {
+    this.product.internals.commands = commands;
+  }
+
   @Override
   public String toString() {
     return JsonUtil.asString(this);
   }
+
+
 }

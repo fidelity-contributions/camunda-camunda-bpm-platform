@@ -16,6 +16,7 @@
  */
 package org.camunda.bpm.engine.impl.telemetry.dto;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.google.gson.annotations.SerializedName;
@@ -27,12 +28,13 @@ public class Internals {
   protected Database database;
   @SerializedName(value = SERIALIZED_APPLICATION_SERVER)
   protected ApplicationServer applicationServer;
-  protected Map<String, Object> commands;
+  protected Map<String, Command> commands;
 
   public Internals(Database database, ApplicationServer server) {
     super();
     this.database = database;
     this.applicationServer = server;
+    this.commands = new HashMap<>();
   }
 
   public Database getDatabase() {
@@ -51,11 +53,11 @@ public class Internals {
     this.applicationServer = applicationServer;
   }
 
-  public Map<String, Object> getCommands() {
+  public Map<String, Command> getCommands() {
     return commands;
   }
 
-  public void setCommands(Map<String, Object> commands) {
+  public void setCommands(Map<String, Command> commands) {
     this.commands = commands;
   }
 

@@ -27,13 +27,17 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.HttpURLConnection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.camunda.bpm.engine.ManagementService;
 import org.camunda.bpm.engine.ProcessEngine;
 import org.camunda.bpm.engine.ProcessEngines;
 import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.camunda.bpm.engine.impl.cfg.StandaloneInMemProcessEngineConfiguration;
+import org.camunda.bpm.engine.impl.telemetry.TelemetryRegistry;
 import org.camunda.bpm.engine.impl.telemetry.dto.ApplicationServer;
+import org.camunda.bpm.engine.impl.telemetry.dto.Command;
 import org.camunda.bpm.engine.impl.telemetry.dto.Data;
 import org.camunda.bpm.engine.impl.telemetry.dto.Database;
 import org.camunda.bpm.engine.impl.telemetry.dto.Internals;
@@ -84,6 +88,8 @@ public class TelemetryReporterTest {
   public void init() {
     configuration = engineRule.getProcessEngineConfiguration();
     managementService = configuration.getManagementService();
+
+    configuration.setTelemetryRegistry(new TelemetryRegistry());
   }
 
   @After
@@ -102,6 +108,7 @@ public class TelemetryReporterTest {
     managementService.toggleTelemetry(true);
     Data data = createDataToSend();
     String requestBody = new Gson().toJson(data);
+    System.out.println("Before: " + requestBody);
     stubFor(post(urlEqualTo("/pings"))
             .willReturn(aResponse()
                         .withBody(requestBody)
@@ -197,6 +204,32 @@ public class TelemetryReporterTest {
   }
 
   @Test
+  public void shouldSendTelemetryWithCommandCounts() {
+    // given default telemetry data (empty telemetry registry)
+    managementService.toggleTelemetry(true);
+    // execute commands
+    managementService.getHistoryLevel();
+    managementService.getLicenseKey();
+
+    Data expectedData = adjustTestDataWithCommandCounts();
+    System.out.println("Before: " + expectedData);
+
+    String requestBody = new Gson().toJson(expectedData);
+    stubFor(post(urlEqualTo("/pings"))
+        .willReturn(aResponse()
+            .withBody(requestBody)
+            .withStatus(HttpURLConnection.HTTP_ACCEPTED)));
+
+    // when
+    configuration.getTelemetryReporter().reportNow();
+
+    // then
+    verify(postRequestedFor(urlEqualTo("/pings"))
+        .withRequestBody(equalToJson(requestBody))
+        .withHeader("Content-Type",  equalTo("application/json")));
+  }
+
+  @Test
   @WatchLogger(loggerNames = {"org.camunda.bpm.engine.telemetry"}, level = "DEBUG")
   public void shouldLogTelemetrySent() {
     // given
@@ -251,6 +284,8 @@ public class TelemetryReporterTest {
   protected Data createDataToSend() {
     Database database = new Database("mySpecialDb", "v.1.2.3");
     Internals internals = new Internals(database, new ApplicationServer("Apache Tomcat/10.0.1"));
+    Map<String, Command> commands = getDefaultCommandCounts();
+    internals.setCommands(commands);
     Product product = new Product("Runtime", "7.14.0", "special", internals);
     Data data = new Data("f5b19e2e-b49a-11ea-b3de-0242ac130004", product);
     return data;
@@ -263,7 +298,30 @@ public class TelemetryReporterTest {
     product.setVersion("7.14.0");
     telemetryData.setProduct(product);
 
+    Map<String, Command> commands = getDefaultCommandCounts();
+    telemetryData.getProduct().getInternals().setCommands(commands);
+
     telemetryData.setApplicationServer(new ApplicationServer(applicationServerVersion));
     return telemetryData;
+  }
+
+  protected Data adjustTestDataWithCommandCounts() {
+    Data telemetryData = configuration.getTelemetryData();
+
+    adjustTestDataWithProductVersionAndAppServerInfo("Wildfly 10");
+
+    Map<String, Command> commands = getDefaultCommandCounts();
+    commands.put("GetHistoryLevelCmd", new Command(1));
+    commands.put("GetLicenseKeyCmd", new Command(1));
+    telemetryData.getProduct().getInternals().setCommands(commands);
+
+    return telemetryData;
+  }
+
+  protected Map<String, Command> getDefaultCommandCounts() {
+    Map<String, Command> commands = new HashMap<>();
+    commands.put("TelemetryConfigureCmd", new Command(1));
+    commands.put("IsTelemetryEnabledCmd", new Command(1));
+    return commands;
   }
 }
