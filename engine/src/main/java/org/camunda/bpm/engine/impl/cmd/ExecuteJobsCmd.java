@@ -126,4 +126,8 @@ public class ExecuteJobsCmd implements Command<Void>, Serializable {
     return null;
   }
 
+  public String getJobId() {
+    return jobId;
+  }
+
 }
