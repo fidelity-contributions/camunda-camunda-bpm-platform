@@ -17,6 +17,7 @@
 package org.camunda.bpm.engine.impl.cmd;
 
 import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotNull;
+import static org.camunda.bpm.engine.impl.util.EnsureUtil.ensureNotEmpty;
 
 import java.io.Serializable;
 
@@ -49,7 +50,7 @@ public class DeleteAttachmentCmd implements Command<Object>, Serializable {
 
   public Object execute(CommandContext commandContext) {
     AttachmentEntity attachment = null;
-    if (taskId != null) {
+    if (!(taskId == null || taskId.isBlank())) {
       attachment = (AttachmentEntity) commandContext
           .getAttachmentManager()
           .findAttachmentByTaskIdAndAttachmentId(taskId, attachmentId);
@@ -70,11 +71,13 @@ public class DeleteAttachmentCmd implements Command<Object>, Serializable {
         .getByteArrayManager()
         .deleteByteArrayById(attachment.getContentId());
     }
+      String attachmentTaskId = attachment.getTaskId();
+      ensureNotEmpty("Cannot find task with null or empty id " + attachmentTaskId, "taskID", attachmentTaskId);
 
-    if (attachment.getTaskId()!=null) {
       TaskEntity task = commandContext
           .getTaskManager()
           .findTaskById(attachment.getTaskId());
+      ensureNotNull("Cannot find task with id '" + attachmentTaskId + "'.", "taskID", attachmentTaskId);
 
       PropertyChange propertyChange = new PropertyChange("name", null, attachment.getName());
 
@@ -82,7 +85,6 @@ public class DeleteAttachmentCmd implements Command<Object>, Serializable {
           .logAttachmentOperation(UserOperationLogEntry.OPERATION_TYPE_DELETE_ATTACHMENT, task, propertyChange);
 
       task.triggerUpdateEvent();
-    }
 
     return null;
   }

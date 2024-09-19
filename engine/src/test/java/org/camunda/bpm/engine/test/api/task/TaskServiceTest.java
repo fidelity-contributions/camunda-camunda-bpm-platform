@@ -2183,7 +2183,10 @@ public class TaskServiceTest {
     assertThat(fetched.getTaskId()).isNull();
     assertThat(fetched.getProcessInstanceId()).isNotNull();
     assertThat(fetched.getCreateTime()).isEqualTo(fixedDate);
-    taskService.deleteAttachment(attachment.getId());
+    try {
+      taskService.deleteAttachment(attachment.getId());
+      fail("expected process engine exception");
+    } catch (ProcessEngineException e) {}
   }
 
   @Test
@@ -2214,6 +2217,24 @@ public class TaskServiceTest {
     // then
     fetched = taskService.getAttachment(attachment.getId());
     assertThat(fetched).isNull();
+  }
+
+  @Test
+  @Deployment(resources={
+          "org/camunda/bpm/engine/test/api/oneTaskProcess.bpmn20.xml"})
+  public void testDeleteAttachmentNullOrEmptyTaskId() throws ParseException {
+    // given
+    runtimeService.startProcessInstanceByKey("oneTaskProcess");
+    ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("oneTaskProcess");
+    Attachment attachment = taskService.createAttachment("web page", "", processInstance.getId(), "weatherforcast", "temperatures and more", new ByteArrayInputStream("someContent".getBytes()));
+    Attachment fetched = taskService.getAttachment(attachment.getId());
+    assertThat(fetched).isNotNull();
+    // when
+    try {
+      taskService.deleteTaskAttachment("", attachment.getId());
+      fail("expected process engine exception");
+    } catch (ProcessEngineException e) {
+    }
   }
 
   @Test
