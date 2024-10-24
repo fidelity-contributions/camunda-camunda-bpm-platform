@@ -50,7 +50,7 @@ public class DeleteAttachmentCmd implements Command<Object>, Serializable {
 
   public Object execute(CommandContext commandContext) {
     AttachmentEntity attachment = null;
-    if (!(taskId == null || taskId.isBlank())) {
+    if (taskId != null && !taskId.isBlank()) {
       attachment = (AttachmentEntity) commandContext
           .getAttachmentManager()
           .findAttachmentByTaskIdAndAttachmentId(taskId, attachmentId);
@@ -72,12 +72,12 @@ public class DeleteAttachmentCmd implements Command<Object>, Serializable {
         .deleteByteArrayById(attachment.getContentId());
     }
       String attachmentTaskId = attachment.getTaskId();
-      ensureNotEmpty("Cannot find task with null or empty id " + attachmentTaskId, "taskID", attachmentTaskId);
+      ensureNotEmpty("Task ID is an empty string ","taskID", attachmentTaskId);
 
       TaskEntity task = commandContext
           .getTaskManager()
           .findTaskById(attachment.getTaskId());
-      ensureNotNull("Cannot find task with id '" + attachmentTaskId + "'.", "taskID", attachmentTaskId);
+      ensureNotNull("Task ID is null " ,"taskID", attachmentTaskId);
 
       PropertyChange propertyChange = new PropertyChange("name", null, attachment.getName());
 
