@@ -72,12 +72,12 @@ public class DeleteAttachmentCmd implements Command<Object>, Serializable {
         .deleteByteArrayById(attachment.getContentId());
     }
       String attachmentTaskId = attachment.getTaskId();
-      ensureNotEmpty("Task ID is an empty string ","taskID", attachmentTaskId);
+      ensureNotEmpty("Task ID is an empty string ","taskId", attachmentTaskId);
 
       TaskEntity task = commandContext
           .getTaskManager()
           .findTaskById(attachment.getTaskId());
-      ensureNotNull("Task ID is null " ,"taskID", attachmentTaskId);
+      ensureNotNull("Task ID is null " ,"taskId", attachmentTaskId);
 
       PropertyChange propertyChange = new PropertyChange("name", null, attachment.getName());
 
