@@ -14,26 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.camunda.impl.test.utils.testcontainers;
+package org.camunda.bpm.integrationtest.functional.spin;
 
-import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.MariaDBContainer;
-import org.testcontainers.containers.MariaDBContainerProvider;
-import org.testcontainers.utility.DockerImageName;
+import java.util.Map;
+import org.camunda.bpm.engine.delegate.DelegateExecution;
+import org.camunda.bpm.engine.delegate.JavaDelegate;
 
-public class CamundaMariaDBContainerProvider extends MariaDBContainerProvider {
-
-  private static final String NAME = "cammariadb";
+public class FeelContextDelegate implements JavaDelegate {
 
   @Override
-  public boolean supports(String databaseType) {
-    return NAME.equals(databaseType);
-  }
+  public void execute(DelegateExecution execution) throws Exception {
+    Map<String, Object> context = (Map<String, Object>) execution.getVariable("context");
+    Map<String, Object> nestedMap = (Map<String, Object>) context.get("innerContext");
 
-  @Override
-  public JdbcDatabaseContainer newInstance(String tag) {
-    DockerImageName dockerImageName = TestcontainersHelper
-      .resolveDockerImageName("mariadb", tag, "mariadb");
-    return new MariaDBContainer(dockerImageName);
+    String content = (String) nestedMap.get("content");
+    execution.setVariable("result", content);
   }
 }
